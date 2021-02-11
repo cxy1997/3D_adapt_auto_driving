@@ -1,0 +1,4 @@
+git+git://github.com/argoai/argoverse-api.git
+nuscenes-devkit
+git+https://github.com/lyft/nuscenes-devkit
+tensorflow-gpu==1.15

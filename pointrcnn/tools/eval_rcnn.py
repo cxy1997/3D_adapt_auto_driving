@@ -859,7 +859,7 @@ def create_dataloader(logger):
                                 rcnn_eval_roi_dir=args.rcnn_eval_roi_dir,
                                 rcnn_eval_feature_dir=args.rcnn_eval_feature_dir,
                                 classes=cfg.CLASSES,
-                                logger=logger, with_replace=args.with_replace, npoints_faraway=args.npoints_faraway)
+                                logger=logger, far_points=args.npoints_faraway)
 
     test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False, pin_memory=True,
                              num_workers=args.workers, collate_fn=test_set.collate_batch)

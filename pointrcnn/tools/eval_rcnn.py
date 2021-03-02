@@ -26,7 +26,7 @@ import tqdm
 np.random.seed(1024)  # set the same seed
 
 parser = argparse.ArgumentParser(description="arg parser")
-parser.add_argument('--cfg_file', type=str, default='cfgs/default_waymo_finetune.yml', help='specify the config for evaluation')
+parser.add_argument('--cfg_file', type=str, default='cfgs/default_waymo_finetune.yaml', help='specify the config for evaluation')
 parser.add_argument("--eval_mode", type=str, default='rcnn', required=True, help="specify the evaluation mode")
 
 parser.add_argument('--eval_all', action='store_true', default=False, help='whether to evaluate all checkpoints')

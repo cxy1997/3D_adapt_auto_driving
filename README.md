@@ -76,6 +76,15 @@ We develop our method on these datasets:
     cd split/
     python replace_split.py
     ```
+   
+4. Generate `car` subset
+
+    We filter scenes and only keep those with cars.
+    
+    ```bash
+    cd scripts/
+    python gen_car_split.py
+    ```
 
 ### Statistical Normalization ([Jupyter notebook](notebooks/stat_norm.ipynb))
 

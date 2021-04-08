@@ -69,12 +69,13 @@ def create_dataloader(logger):
     DATA_PATH = args.root
 
     # create dataloader
-    train_set = KittiRCNNDataset(root_dir=DATA_PATH, npoints=cfg.RPN.NUM_POINTS, split=cfg.TRAIN.SPLIT, mode='TRAIN',
+    train_set = KittiRCNNDataset(root_dir=DATA_PATH, npoints=cfg.RPN.NUM_POINTS,
+                                 split=cfg.TRAIN.SPLIT, classes=cfg.CLASSES,mode='TRAIN',
                                  logger=logger,
-                                 classes=cfg.CLASSES, npoints_faraway=args.npoints_faraway,
+                                 far_points=args.npoints_faraway,
                                  rcnn_training_roi_dir=args.rcnn_training_roi_dir,
                                  rcnn_training_feature_dir=args.rcnn_training_feature_dir,
-                                 gt_database_dir=args.gt_database, with_replace=args.with_replace,
+                                 gt_database_dir=None, with_replace=args.with_replace,
                                  subsample=args.subsample, shuffle_subsample=args.shuffle_subsample)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, pin_memory=True,
                               num_workers=args.workers, shuffle=True, collate_fn=train_set.collate_batch,

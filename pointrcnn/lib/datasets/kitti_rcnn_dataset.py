@@ -11,8 +11,9 @@ from lib.config import cfg
 
 class KittiRCNNDataset(KittiDataset):
     def __init__(self, root_dir, npoints=16384, split='train', classes='Car', mode='TRAIN', random_select=True,
-                 logger=None, rcnn_training_roi_dir=None, rcnn_training_feature_dir=None, rcnn_eval_roi_dir=None,
-                 rcnn_eval_feature_dir=None, gt_database_dir=None, far_points=200):
+                 logger=None,far_points=200, rcnn_training_roi_dir=None, rcnn_training_feature_dir=None, rcnn_eval_roi_dir=None,
+                 rcnn_eval_feature_dir=None, gt_database_dir=None, with_replace=False,
+                                 subsample=1, shuffle_subsample=None):
         super().__init__(root_dir=root_dir, split=split)
         if classes == 'Car':
             self.classes = ('Background', 'Car')

@@ -14,6 +14,7 @@ __C.INCLUDE_SIMILAR_TYPE = False
 # config of augmentation
 __C.AUG_DATA = True
 __C.AUG_METHOD_LIST = ['rotation', 'scaling', 'flip']
+__C.SCALE_MIN_MAX_RANGE = [0.95, 1.05]
 __C.AUG_METHOD_PROB = [0.5, 0.5, 0.5]
 __C.AUG_ROT_RANGE = 18
 

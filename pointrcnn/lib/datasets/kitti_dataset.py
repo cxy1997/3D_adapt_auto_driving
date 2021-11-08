@@ -1,19 +1,36 @@
 import os
+import random
+
 import numpy as np
 import torch.utils.data as torch_data
+from PIL import Image
+
 import lib.utils.calibration as calibration
 import lib.utils.kitti_utils as kitti_utils
-from PIL import Image
 
 
 class KittiDataset(torch_data.Dataset):
-    def __init__(self, root_dir, split='train'):
+    def __init__(self, root_dir, split='train', subsample=-1, shuffle_subsample=None):
         self.split = split
         is_test = self.split == 'test'
         self.imageset_dir = os.path.join(root_dir, 'KITTI', 'object', 'testing' if is_test else 'training')
 
-        split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
-        self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
+        if subsample > 0 and split == 'train':
+            if shuffle_subsample is not None:
+                split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', 'train_car1_{}.txt'.format(shuffle_subsample))
+                if not os.path.isfile(split_dir):
+                    temp = os.path.join(root_dir, 'KITTI', 'ImageSets', 'train_car1.txt')
+                    temp = [x.strip() for x in open(temp).readlines()]
+                    random.shuffle(temp)
+                    with open(split_dir, 'w') as f:
+                        for item in temp:
+                            f.write('{}\n'.format(item))
+            else:
+                split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', 'train_car1.txt'.format(shuffle_subsample))
+            self.image_idx_list = [x.strip() for x in open(split_dir).readlines()][:subsample]
+        else:
+            split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
+            self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
         self.num_sample = self.image_idx_list.__len__()
 
         self.image_dir = os.path.join(self.imageset_dir, 'image_2')
@@ -39,7 +56,7 @@ class KittiDataset(torch_data.Dataset):
 
     def get_lidar(self, idx):
         lidar_file = os.path.join(self.lidar_dir, '%06d.bin' % idx)
-        assert os.path.exists(lidar_file), f"Lidar file {lidar_file} does not exist!"
+        assert os.path.exists(lidar_file)
         return np.fromfile(lidar_file, dtype=np.float32).reshape(-1, 4)
 
     def get_calib(self, idx):

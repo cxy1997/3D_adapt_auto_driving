@@ -122,6 +122,7 @@ We use [PointRCNN](https://arxiv.org/abs/1812.04244) to validate our method.
     python generate_multi_data.py
     python generate_gt_database.py --root ...
     ```
+   The `NuScence` dataset has much less points in each bounding box, so we have to turn of the `GT_AUG_HARD_RATIO` augmentation.
 
 3. Download the models pretrained on source domains from [google drive](https://drive.google.com/drive/folders/14MXjNImFoS2P7YprLNpSmFBsvxf5J2Kw?usp=sharing) using [gdrive](https://github.com/gdrive-org/gdrive/releases/download/2.1.0/gdrive-linux-x64).
 

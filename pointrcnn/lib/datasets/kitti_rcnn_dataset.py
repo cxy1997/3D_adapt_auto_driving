@@ -12,8 +12,9 @@ from lib.config import cfg
 class KittiRCNNDataset(KittiDataset):
     def __init__(self, root_dir, npoints=16384, split='train', classes='Car', mode='TRAIN', random_select=True,
                  logger=None, rcnn_training_roi_dir=None, rcnn_training_feature_dir=None, rcnn_eval_roi_dir=None,
-                 rcnn_eval_feature_dir=None, gt_database_dir=None, far_points=200):
-        super().__init__(root_dir=root_dir, split=split)
+                 rcnn_eval_feature_dir=None, gt_database_dir=None, with_replace=False, npoints_faraway=4000,
+                 subsample=-1, shuffle_subsample=False):
+        super().__init__(root_dir=root_dir, split=split, subsample=subsample, shuffle_subsample=shuffle_subsample)
         if classes == 'Car':
             self.classes = ('Background', 'Car')
             aug_scene_root_dir = os.path.join(root_dir, 'KITTI', 'aug_scene')
@@ -31,10 +32,11 @@ class KittiRCNNDataset(KittiDataset):
         self.num_class = self.classes.__len__()
 
         self.npoints = npoints
-        self.far_points = far_points
         self.sample_id_list = []
         self.random_select = random_select
         self.logger = logger
+        self.with_replace = with_replace
+        self.npoints_faraway=npoints_faraway
 
         if split == 'train_aug':
             self.aug_label_dir = os.path.join(aug_scene_root_dir, 'training', 'aug_label')
@@ -166,8 +168,6 @@ class KittiRCNNDataset(KittiDataset):
 
         valid_obj_list = []
         for obj in obj_list:
-            if obj.pos[2] >= 70:
-                continue
             if obj.cls_type not in type_whitelist:  # rm Van, 20180928
                 continue
             if self.mode == 'TRAIN' and cfg.PC_REDUCE_BY_RANGE and (self.check_pc_range(obj.pos) is False):
@@ -179,8 +179,6 @@ class KittiRCNNDataset(KittiDataset):
     def filtrate_dc_objects(obj_list):
         valid_obj_list = []
         for obj in obj_list:
-            if obj.pos[2] >= 70:
-                continue
             if obj.cls_type in ['DontCare']:
                 continue
             valid_obj_list.append(obj)
@@ -292,10 +290,18 @@ class KittiRCNNDataset(KittiDataset):
                 pts_depth = pts_rect[:, 2]
                 pts_near_flag = pts_depth < 40.0
                 far_idxs_choice = np.where(pts_near_flag == 0)[0]
-                if len(far_idxs_choice) > self.far_points:
-                    far_idxs_choice = np.random.choice(far_idxs_choice, self.far_points, replace=False)
+                if len(far_idxs_choice) > self.npoints_faraway:
+                    far_idxs_choice = np.random.choice(far_idxs_choice, self.npoints_faraway, replace=False)
                 near_idxs = np.where(pts_near_flag == 1)[0]
-                near_idxs_choice = np.random.choice(near_idxs, self.npoints - len(far_idxs_choice), replace=self.npoints-len(far_idxs_choice)>len(near_idxs)) # Xiangyu: False before!
+                if len(near_idxs) < self.npoints - len(far_idxs_choice):
+                    near_idxs_choice = np.random.choice(near_idxs, self.npoints - len(far_idxs_choice),
+                                                    replace=True)
+                else:
+                    try:
+                        near_idxs_choice = np.random.choice(near_idxs, self.npoints - len(far_idxs_choice), replace=self.with_replace)
+                    except:
+                        print(sample_id, len(far_idxs_choice), len(near_idxs))
+                        raise NotImplementedError
 
                 choice = np.concatenate((near_idxs_choice, far_idxs_choice), axis=0) \
                     if len(far_idxs_choice) > 0 else near_idxs_choice
@@ -303,7 +309,14 @@ class KittiRCNNDataset(KittiDataset):
             else:
                 choice = np.arange(0, len(pts_rect), dtype=np.int32)
                 if self.npoints > len(pts_rect):
-                    extra_choice = np.random.choice(choice, self.npoints - len(pts_rect), replace=len(choice)*2 < self.npoints)
+                    if len(choice) < self.npoints - len(pts_rect):
+                        try:
+                            extra_choice = np.random.choice(choice, self.npoints - len(pts_rect), replace=True)
+                        except:
+                            print(sample_id, len(pts_rect))
+                            raise NotImplementedError
+                    else:
+                        extra_choice = np.random.choice(choice, self.npoints - len(pts_rect), replace=False)
                     choice = np.concatenate((choice, extra_choice), axis=0)
                 np.random.shuffle(choice)
 
@@ -553,7 +566,8 @@ class KittiRCNNDataset(KittiDataset):
             aug_method.append(['rotation', angle])
 
         if 'scaling' in aug_list and aug_enable[1] < cfg.AUG_METHOD_PROB[1]:
-            scale = np.random.uniform(0.95, 1.05)
+            scale = np.random.uniform(cfg.SCALE_MIN_MAX_RANGE[0], cfg.SCALE_MIN_MAX_RANGE[1])
+            # scale = np.random.uniform(0.95, 1.05)
             aug_pts_rect = aug_pts_rect * scale
             aug_gt_boxes3d[:, 0:6] = aug_gt_boxes3d[:, 0:6] * scale
             aug_method.append(['scaling', scale])
